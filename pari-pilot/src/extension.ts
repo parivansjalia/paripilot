@@ -1,50 +1,89 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import ollama from 'ollama'; 
+import ollama from 'ollama';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	const disposable = vscode.commands.registerCommand('paripilot.start', () => {
-		const panel = vscode.window.createWebviewPanel(
-			'deepchat',
-			'Deep Seek Chat',
-			vscode.ViewColumn.One, 
-			{ enableScripts: true}
-		)
+    // Register the chatbot command
+    const chatCommand = vscode.commands.registerCommand('paripilot.start', () => {
+        const panel = vscode.window.createWebviewPanel(
+            'deepchat',
+            'Deep Seek Chat',
+            vscode.ViewColumn.One,
+            { enableScripts: true }
+        );
 
-		panel.webview.html = getWebviewContent()
+        panel.webview.html = getWebviewContent();
 
-		panel.webview.onDidReceiveMessage(async (message: any) => {
-			if(message.command == 'chat'){
-				const userPrompt = message.test
-				let responseText = ''
-	
-				try {
-					const streamResponse = await ollama.chat({
-						model: 'deepseek-r1:1.5b', 
-						messages: [{ role: 'user', content: userPrompt}],
-						stream: true
-					})
-	
-					for await (const part of streamResponse){
-						responseText += part.message.content
-						panel.webview.postMessage({ command: 'chatResponse', text: responseText})
-					}
-	
-				} catch (err){
-					panel.webview.postMessage({ command: 'chatResponse', test: `Error: ${String(err)}` });
-				}
-			}
-		})
-	
+        panel.webview.onDidReceiveMessage(async (message: any) => {
+            if (message.command === 'chat') {
+                const userPrompt = message.text;
+                let responseText = '';
 
-	})
+                try {
+                    const streamResponse = await ollama.chat({
+                        model: 'deepseek-r1:1.5b',
+                        messages: [{ role: 'user', content: userPrompt }],
+                        stream: true
+                    });
 
-	context.subscriptions.push(disposable)
-	
+                    for await (const part of streamResponse) {
+                        responseText += part.message.content;
+                        panel.webview.postMessage({ command: 'chatResponse', text: responseText });
+                    }
 
+                } catch (err) {
+                    panel.webview.postMessage({ command: 'chatResponse', text: `Error: ${String(err)}` });
+                }
+            }
+        });
+    });
+
+    // Register the process comment command
+    const processCommentCommand = vscode.commands.registerCommand('paripilot.processSelection', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showErrorMessage('No active editor found.');
+            return;
+        }
+
+        const selection = editor.selection;
+        if (selection.isEmpty) {
+            vscode.window.showErrorMessage('Please select a comment to process.');
+            return;
+        }
+
+        const selectedText = editor.document.getText(selection);
+        const fileType = editor.document.languageId;
+        const userPrompt = `${selectedText}\n\nFile Type: ${fileType}\nJust give the code, nothing else.`;
+
+        try {
+            const streamResponse = await ollama.chat({
+                model: 'deepseek-r1:1.5b',
+                messages: [{ role: 'user', content: userPrompt }],
+                stream: true
+            });
+
+            let responseText = '';
+            for await (const part of streamResponse) {
+                responseText += part.message.content;
+            }
+
+            editor.edit(editBuilder => {
+                editBuilder.insert(selection.end, `\n\n${responseText}`);
+            });
+
+        } catch (err) {
+            vscode.window.showErrorMessage(`Error: ${String(err)}`);
+        }
+    });
+
+    // Status bar button for comment processing
+    const statusBarButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    statusBarButton.text = `$(comment) Process Comment`;
+    statusBarButton.command = 'paripilot.processSelection';
+    statusBarButton.show();
+
+    // Add everything to subscriptions
+    context.subscriptions.push(chatCommand, processCommentCommand, statusBarButton);
 }
 
 function getWebviewContent(): string {
@@ -149,9 +188,5 @@ function getWebviewContent(): string {
     `;
 }
 
-
-
-// This method is called when your extension is deactivated
+// Deactivate function
 export function deactivate() {}
-
-
