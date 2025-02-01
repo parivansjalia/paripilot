@@ -6,37 +6,45 @@ import ollama from 'ollama';
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	const panel = vscode.window.createWebviewPanel(
-		'deepchat',
-		'Deep Seek Chat',
-		vscode.ViewColumn.One, 
-		{ enableScripts: true}
-	)
+	const disposable = vscode.commands.registerCommand('paripilot.start', () => {
+		const panel = vscode.window.createWebviewPanel(
+			'deepchat',
+			'Deep Seek Chat',
+			vscode.ViewColumn.One, 
+			{ enableScripts: true}
+		)
 
-	panel.webview.html = getWebviewContent()
+		panel.webview.html = getWebviewContent()
 
-	panel.webview.onDidReceiveMessage(async (message: any) => {
-		if(message.command == 'chat'){
-			const userPrompt = message.test
-			let responseText = ''
-
-			try {
-				const streamResponse = await ollama.chat({
-					model: 'deepseek-r1:1.5b', 
-					messages: [{ role: 'user', content: userPrompt}],
-					stream: true
-				})
-
-				for await (const part of streamResponse){
-					responseText += part.message.content
-					panel.webview.postMessage({ command: 'chatResponse', text: responseText})
+		panel.webview.onDidReceiveMessage(async (message: any) => {
+			if(message.command == 'chat'){
+				const userPrompt = message.test
+				let responseText = ''
+	
+				try {
+					const streamResponse = await ollama.chat({
+						model: 'deepseek-r1:1.5b', 
+						messages: [{ role: 'user', content: userPrompt}],
+						stream: true
+					})
+	
+					for await (const part of streamResponse){
+						responseText += part.message.content
+						panel.webview.postMessage({ command: 'chatResponse', text: responseText})
+					}
+	
+				} catch (err){
+					panel.webview.postMessage({ command: 'chatResponse', test: `Error: ${String(err)}` });
 				}
-
-			} catch (err){
-				panel.webview.postMessage({ command: 'chatResponse', test: `Error: ${String(err)}` });
 			}
-		}
+		})
+	
+
 	})
+
+	context.subscriptions.push(disposable)
+	
+
 }
 
 function getWebviewContent(): string{
