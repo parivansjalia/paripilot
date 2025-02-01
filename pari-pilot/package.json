@@ -14,8 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "pari-pilot.helloWorld",
-        "title": "Hello World"
+        "command": "paripilot.start",
+        "title": "Chat With Pilot"
       }
     ]
   },

@@ -47,60 +47,108 @@ export function activate(context: vscode.ExtensionContext) {
 
 }
 
-function getWebviewContent(): string{
-	return `
-	<!DOCTYPE html>
-	<html lang="en">
-	<head>
-	<meta charset="UTF-8" />
-	<style>
-		body {
-			font-family: sans-serif;
-			margin: 1rem;
-		}
-		
-		#prompt {
-			width: 100%;
-			box-sizing: border-box;
-		
-		}
+function getWebviewContent(): string {
+    return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Pari Pilot</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', sans-serif;
+                margin: 20px;
+                background-color: #1e1e1e;
+                color: #ffffff;
+                text-align: center;
+            }
+            
+            h2 {
+                margin-bottom: 10px;
+                font-size: 1.5rem;
+            }
 
-		#response {
-			border: 1px solid #ccc;
-			margin-top: 1rem;
-			padding: 0.5rem;
-		}
-	</style>
-	</head>
-	<body>
-		<h2> Pari Pilot</h2>
-		<textarea id ="prompt" rows="3 placeholder="Ask something..."></textarea><br/>
-		<button id = "askBtn">Ask</button>
-		<div id="response"></div>	
-	
-	
-	<script> 
-		const vscode = acquireVsCodeApi();
+            #container {
+                max-width: 500px;
+                margin: 0 auto;
+                background: #252526;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+            }
 
-		document.getElementById('askBtn).addEventListener('click', () => {
-			const text = document.getElementById('prompt').value;
-			vscode.postMessage({ command: 'chat', test});
-		});
+            #prompt {
+                width: 100%;
+                height: 80px;
+                box-sizing: border-box;
+                padding: 10px;
+                font-size: 1rem;
+                border: none;
+                border-radius: 5px;
+                background: #333;
+                color: white;
+                resize: none;
+                outline: none;
+            }
 
-		window.addEventListerner('message', event => {
-			const { command, test } = event.data;
-			if (command === 'chatResponse') {
-				document.getElementById('response').innerText = test;
-			}
-		});	
+            #askBtn {
+                margin-top: 10px;
+                width: 100%;
+                padding: 10px;
+                font-size: 1rem;
+                border: none;
+                border-radius: 5px;
+                background: #007acc;
+                color: white;
+                cursor: pointer;
+                transition: 0.2s;
+            }
 
-	</script>
+            #askBtn:hover {
+                background: #005f99;
+            }
 
-	</body>
-	</html>
+            #response {
+                margin-top: 15px;
+                padding: 10px;
+                border-radius: 5px;
+                background: #444;
+                min-height: 50px;
+                text-align: left;
+                white-space: pre-wrap;
+                font-size: 0.95rem;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>Pari Pilot</h2>
+        <div id="container">
+            <textarea id="prompt" placeholder="Ask something..."></textarea>
+            <button id="askBtn">Ask</button>
+            <div id="response"></div>
+        </div>
+    
+        <script> 
+            const vscode = acquireVsCodeApi();
 
-	`
+            document.getElementById('askBtn').addEventListener('click', () => {
+                const text = document.getElementById('prompt').value;
+                vscode.postMessage({ command: 'chat', text });
+            });
+
+            window.addEventListener('message', event => {
+                const { command, text } = event.data;
+                if (command === 'chatResponse') {
+                    document.getElementById('response').innerText = text;
+                }
+            });
+        </script>
+    </body>
+    </html>
+    `;
 }
+
 
 
 // This method is called when your extension is deactivated
