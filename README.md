@@ -56,8 +56,8 @@ npm install
 ## ⚙️ Commands
 | Command                        | Description                                           |
 |--------------------------------|-------------------------------------------------------|
-| **PariPilot: Start Chat**      | Opens the AI-powered chat window.                   |
-| **PariPilot: Process Selection** | Processes highlighted comments and inserts AI-generated code. |
+| **Chat with Pilot**      | Opens the AI-powered chat window.                   |
+| **Process Selection** | Processes highlighted comments and inserts AI-generated code. |
 
 
 ## 📌 Notes
